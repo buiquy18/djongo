@@ -6,6 +6,7 @@ SQL constructors.
 import re
 import typing
 from logging import getLogger
+from bson.codec_options import CodecOptions
 
 from dataclasses import dataclass
 from pymongo import MongoClient
@@ -96,6 +97,9 @@ class VoidQuery(Query):
 class SelectQuery(Query):
 
     def __init__(self, *args):
+        
+        self.col_opts = CodecOptions(tz_aware=True)
+        
         self.selected_columns: ColumnSelectConverter = None
         self.where: typing.Optional[WhereConverter] = None
         self.joins: typing.Optional[typing.List[
@@ -268,7 +272,7 @@ class SelectQuery(Query):
             if self.offset:
                 kwargs.update(self.offset.to_mongo())
 
-            cur = self.db_ref[self.left_table].find(**kwargs)
+            cur = self.db_ref.get_collection(self.left_table, self.col_opts).find(**kwargs)
             logger.debug(f'Find query: {kwargs}')
 
         return cur
